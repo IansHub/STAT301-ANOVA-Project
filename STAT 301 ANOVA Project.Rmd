@@ -1,0 +1,48 @@
+---
+title: "STAT 301 ANOVA Project"
+output: word_document
+date: "2025-04-06"
+---
+
+```{r}
+library(dplyr)
+
+CycledAir_df <- data.frame(CleanCycledAirData)
+
+#Check range of temperature readings
+range(CycledAir_df$Temperature)
+range(CycledAir_df$Humidity)
+range(CycledAir_df$HeatIndex)
+
+humidity_breaks <- c(42, 60, 77, 94)
+humidity_labels <- c("Low", "Medium", "High")
+
+
+CycledAir_df$HumidityRange <- cut(
+  CycledAir_df$Humidity,
+  breaks = humidity_breaks,
+  labels = humidity_labels,
+  include.lowest = TRUE
+)
+
+
+#Add a column of categorical ordinal temperature ranges for use in ANOVA
+temp_breaks <- c(48, 60, 70, 90)
+temp_labels <- c("Low", "Medium", "High")
+
+CycledAir_df$TempRange <- cut(
+  CycledAir_df$Temperature,
+  breaks = temp_breaks,
+  labels = temp_labels,
+  include.lowest = TRUE
+)
+```
+
+```{r}
+CycledAir_df$Reading <- na_if(CycledAir_df$Reading, "NA")
+sum(is.na(CycledAir_df$Reading))
+anova_result <- aov(Reading ~ TempRange*LoadControl*HumidityRange, data = CycledAir_df)
+summary(anova_result)
+TukeyHSD(anova_result)
+```
+
