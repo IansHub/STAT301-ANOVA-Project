@@ -1,0 +1,6 @@
+---
+title: "STAT 301 ANOVA Project"
+output: word_document
+date: "2025-04-06"
+---
+
