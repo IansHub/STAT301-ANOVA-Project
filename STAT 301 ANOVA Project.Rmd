@@ -46,3 +46,16 @@ summary(anova_result)
 TukeyHSD(anova_result)
 ```
 
+
+
+
+```{r}
+#Analysis
+UsageModel<-lme(Reading~TempRange+HumidityRange+TempRange*HumidityRange+LoadControl+TempRange*LoadControl+HumidityRange*LoadControl,random = ~ 1| MeterID, data= CycledAir_df)
+anova(UsageModel)
+
+UsageModel<-lme(Reading~TempRange+HumidityRange+TempRange*HumidityRange,random = ~ 1| MeterID, data= CycledAir_df)
+
+anova_result <- aov(Reading ~ LoadControl, data = CycledAir_df)
+summary(anova_result)
+TukeyHSD(anova_result)
