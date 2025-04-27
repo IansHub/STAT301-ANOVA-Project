@@ -4,15 +4,27 @@ output: word_document
 date: "2025-04-06"
 ---
 
+##Importing Necessary Libraries
 ```{r}
 library(dplyr)
+library(multcomp)
+library(nlme)
+library(ggplot2)
+```
 
-CycledAir_df <- data.frame(CleanCycledAirData)
+##Data Preparation
+```{r}
 
-#Check range of temperature readings
+CycledAir_df <- data.frame(JulyCycledAirData)
+
+#Check range of IV readings
 range(CycledAir_df$Temperature)
 range(CycledAir_df$Humidity)
 range(CycledAir_df$HeatIndex)
+
+#Add a column of categorical ordinal temperature ranges for use in ANOVA
+temp_breaks <- c(48, 60, 70, 90)
+temp_labels <- c("Low", "Medium", "High")
 
 humidity_breaks <- c(42, 60, 77, 94)
 humidity_labels <- c("Low", "Medium", "High")
@@ -24,11 +36,6 @@ CycledAir_df$HumidityRange <- cut(
   labels = humidity_labels,
   include.lowest = TRUE
 )
-
-
-#Add a column of categorical ordinal temperature ranges for use in ANOVA
-temp_breaks <- c(48, 60, 70, 90)
-temp_labels <- c("Low", "Medium", "High")
 
 CycledAir_df$TempRange <- cut(
   CycledAir_df$Temperature,
