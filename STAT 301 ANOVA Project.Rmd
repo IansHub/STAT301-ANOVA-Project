@@ -66,3 +66,4 @@ UsageModel<-lme(Reading~TempRange+HumidityRange+TempRange*HumidityRange,random =
 anova_result <- aov(Reading ~ LoadControl, data = CycledAir_df)
 summary(anova_result)
 TukeyHSD(anova_result)
+```
