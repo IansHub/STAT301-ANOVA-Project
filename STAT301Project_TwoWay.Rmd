@@ -1,0 +1,80 @@
+---
+title: "Project301"
+author: "Michael Earl"
+date: "2025-04-24"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r}
+#Libraries
+library(dplyr)
+library(lubridate)
+library(stringr)
+library(nlme)
+library(multcomp)
+```
+
+
+```{r}
+#Sorting Data
+CycledAir_df <- data.frame(JulyCycledAirData)
+
+
+#Check range of temperature readings
+range(CycledAir_df$Temperature)
+range(CycledAir_df$Humidity)
+
+
+humidity_breaks <- c(42, 60, 77, 98)
+humidity_labels <- c("Low", "Medium", "High")
+
+
+CycledAir_df$HumidityRange <- cut(
+  CycledAir_df$Humidity,
+  breaks = humidity_breaks,
+  labels = humidity_labels,
+  include.lowest = TRUE
+)
+
+
+#Add a column of categorical ordinal temperature ranges for use in ANOVA
+temp_breaks <- c(48, 60, 74, 92)
+temp_labels <- c("Low", "Medium", "High")
+
+CycledAir_df$TempRange <- cut(
+  CycledAir_df$Temperature,
+  breaks = temp_breaks,
+  labels = temp_labels,
+  include.lowest = TRUE
+)
+
+
+CycledAir_df <- CycledAir_df %>%
+  filter(!is.na(Reading))
+sum(is.na(CycledAir_df$Reading))
+```
+
+```{r}
+#Analysis
+CycledAir_df$Reading <- as.numeric(CycledAir_df$Reading)
+UsageModel<-lme(Reading~TempRange+HumidityRange+TempRange*HumidityRange+LoadControl+TempRange*LoadControl+HumidityRange*LoadControl,random = ~ 1| MeterID, data= CycledAir_df, na.action = na.omit)
+anova(UsageModel)
+
+UsageModel<-lme(Reading~TempRange+HumidityRange+TempRange*HumidityRange,random = ~ 1| MeterID, data= CycledAir_df)
+
+anova_result <- aov(Reading ~ LoadControl, data = CycledAir_df)
+summary(anova_result)
+TukeyHSD(anova_result)
+
+
+UsageModel<-lme(Reading~TempRange+HumidityRange+TempRange*HumidityRange+LoadControl+TempRange*LoadControl+HumidityRange*LoadControl,random = ~ 1| MeterID, data= CycledAir_df)
+anova(UsageModel)
+
+UsageModel<-lme(Reading~TempRange+HumidityRange+TempRange*HumidityRange,random = ~ 1| MeterID, data= CycledAir_df)
+```
+
