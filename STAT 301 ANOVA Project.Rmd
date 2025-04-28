@@ -15,6 +15,7 @@ library(ggplot2)
 ##Data Preparation
 ```{r}
 
+FullCycledAir_df <- data.frame(CleanCycledAirData)
 CycledAir_df <- data.frame(JulyCycledAirData)
 
 #Check range of IV readings
@@ -22,13 +23,13 @@ range(CycledAir_df$Temperature)
 range(CycledAir_df$Humidity)
 range(CycledAir_df$HeatIndex)
 
-#Add a column of categorical ordinal temperature ranges for use in ANOVA
-temp_breaks <- c(48, 60, 70, 90)
+
+#Add a column of categorical ordinal temperature and humidity ranges for use in ANOVA
+humidity_breaks <- c(50, 65, 80, 97)
+humidity_labels <- c("Low","Medium", "High")
+
+temp_breaks <- c(60, 70, 80, 92)
 temp_labels <- c("Low", "Medium", "High")
-
-humidity_breaks <- c(42, 60, 77, 94)
-humidity_labels <- c("Low", "Medium", "High")
-
 
 CycledAir_df$HumidityRange <- cut(
   CycledAir_df$Humidity,
@@ -43,27 +44,84 @@ CycledAir_df$TempRange <- cut(
   labels = temp_labels,
   include.lowest = TRUE
 )
-```
 
-```{r}
+#Removing NAs from Reading Column
 CycledAir_df$Reading <- na_if(CycledAir_df$Reading, "NA")
 sum(is.na(CycledAir_df$Reading))
-anova_result <- aov(Reading ~ TempRange*LoadControl*HumidityRange, data = CycledAir_df)
-summary(anova_result)
-TukeyHSD(anova_result)
+
+CycledAir_df <- na.omit(CycledAir_df)
+CycledAir_df$Reading <- na_if(CycledAir_df$Reading, "NA")
+sum(is.na(CycledAir_df$Reading))
+
+
 ```
 
 
-
-
+##Plotting data
 ```{r}
-#Analysis
-UsageModel<-lme(Reading~TempRange+HumidityRange+TempRange*HumidityRange+LoadControl+TempRange*LoadControl+HumidityRange*LoadControl,random = ~ 1| MeterID, data= CycledAir_df)
-anova(UsageModel)
+CycledAir_df%>%
+  group_by(LoadControl)%>%
+  summarise(aves=mean(Reading),sds=sd(Reading))%>%
+  ggplot(aes(x=LoadControl, y=aves, fill = LoadControl))+geom_bar(stat = "identity")+ylab("Average Meter Reading")+ggtitle("Average Meter Reading by Load Control Status")
 
-UsageModel<-lme(Reading~TempRange+HumidityRange+TempRange*HumidityRange,random = ~ 1| MeterID, data= CycledAir_df)
+ggplot(CycledAir_df, aes(x = LoadControl, y = Reading, fill = LoadControl)) +
+  geom_boxplot() +
+  labs(title = "Meter Readings by Load Control Status")
+
+CycledAir_df%>%
+  group_by(TempRange)%>%
+  summarise(aves=mean(Reading),sds=sd(Reading))%>%
+  ggplot(aes(x=TempRange, y=aves, fill = TempRange))+geom_bar(stat = "identity")+ylab("Average Meter Reading")+ggtitle("Average Meter Reading by Temperature Range")
+
+# Make bar plot for Temperature Groups
+# Count how many observations in each TempRange
+temp_counts <- CycledAir_df %>%
+  group_by(TempRange) %>%
+  summarise(count = n())
+
+# Plot the counts
+ggplot(temp_counts, aes(x = TempRange, y = count)) +
+  geom_bar(stat = "identity", fill = "skyblue") +
+  geom_text(aes(label = count), vjust = -0.5) +
+  labs(
+    title = "Number of Observations by Temperature Group",
+    x = "Temperature Group",
+    y = "Count"
+  ) +
+  theme_minimal()
+
+# Count how many observations in each HumidityRange
+humidity_counts <- CycledAir_df %>%
+  group_by(HumidityRange) %>%
+  summarise(count = n())
+
+#  Plot the Humidity groups
+ggplot(humidity_counts, aes(x = HumidityRange, y = count)) +
+  geom_bar(stat = "identity", fill = "lightgreen") +
+  geom_text(aes(label = count), vjust = -0.5) +
+  labs(
+    title = "Number of Observations by Humidity Groups",
+    x = "Humidity Group",
+    y = "Count"
+  ) +
+  theme_minimal()
+```
+
+
+## One-Way ANOVA for LoadControl
+```{r}
+CycledAir_df$LoadControl <- as.factor(CycledAir_df$LoadControl)
+CycledAir_df$Reading <- as.numeric(CycledAir_df$Reading)
+LoadControl_model<-lme(Reading~LoadControl, random=~1|MeterID, data=CycledAir_df)
+anova(LoadControl_model)
+
+LoadControl_posthoc <- glht(LoadControl_model, linfct=mcp(LoadControl="Tukey"))
+summary(LoadControl_posthoc)
+
 
 anova_result <- aov(Reading ~ LoadControl, data = CycledAir_df)
 summary(anova_result)
 TukeyHSD(anova_result)
+
+
 ```
